@@ -1,16 +1,9 @@
-import crypto from "crypto";
-import { env } from "~/env.ts";
+import { env } from "../env.ts";
+import CryptoJS from "crypto-js";
 
-const resizedIV = Buffer.allocUnsafe(16);
-const iv = crypto.createHash("sha256").update(env.SOCKET_SECRET).digest();
-iv.copy(resizedIV);
+const iv = CryptoJS.SHA256(env.SOCKET_SECRET);
+const key = CryptoJS.SHA256(env.SOCKET_KEY);
 
 export function decrypt(msg: string) {
-    const key = crypto.createHash("sha256").update(env.SOCKET_KEY).digest();
-    const decipher = crypto.createDecipheriv("aes256", key, resizedIV);
-
-    let decrypted = decipher.update(msg, "hex", "utf8");
-    decrypted += decipher.final("utf8");
-
-    return decrypted;
+    return CryptoJS.AES.decrypt(msg, key, { iv }).toString(CryptoJS.enc.Utf8);
 }

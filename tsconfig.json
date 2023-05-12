@@ -15,9 +15,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "incremental": true,
-    "paths": {
-      "~/*": ["./src/*"]
-    }
   },
   "include": ["**/*/*.ts"],
   "exclude": ["node_modules", "build"]

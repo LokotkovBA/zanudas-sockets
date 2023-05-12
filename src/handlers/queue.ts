@@ -1,8 +1,8 @@
 import type { Server, Socket } from "socket.io";
-import { env } from "~/env.ts";
-import { checkAuth } from "~/middleware/auth.ts";
-import { checkSchema, likeSchema } from "~/middleware/messageSchemas.ts";
-import { updateLikes } from "~/queries/likes.ts";
+import { checkSchema, likeSchema } from "../middleware/messageSchemas.ts";
+import { checkAuth } from "../middleware/auth.ts";
+import { updateLikes } from "../queries/likes.ts";
+import { env } from "../env.ts";
 
 const showInfo = false;
 const textInfo = `Разбор новой композиции недоступен D:
@@ -34,8 +34,10 @@ export default function queueHandler(server: Server, socket: Socket) {
 
     socket.on("like", (message) =>
         checkSchema(message, likeSchema, socket, (message) => {
-            checkAuth(message, socket, ({ message: { entryId } }) => {
-                toUpdate.add(entryId);
+            checkAuth(message, socket, ({ username, message }) => {
+                server.to(username).emit("like", message);
+
+                toUpdate.add(message.entryId);
                 if (!waitingToUpdate) {
                     updateQueue(server, toUpdate);
                 }
@@ -46,18 +48,16 @@ export default function queueHandler(server: Server, socket: Socket) {
 
 function updateQueue(server: Server, toUpdate: Set<number>) {
     waitingToUpdate = true;
-    setTimeout(() => {
+    setTimeout(async () => {
         waitingToUpdate = false;
         for (const entryId of toUpdate) {
-            updateLikes(entryId);
+            await updateLikes(entryId);
         }
+        server.emit("invalidate");
     }, getLikeDelay(server));
 }
 
 const LIKE_DELAY_CONSTANT = parseInt(env.LIKE_DELAY_CONSTANT);
 function getLikeDelay(server: Server): number {
-    return (
-        LIKE_DELAY_CONSTANT *
-        (server.of("/").adapter.rooms.size - server.of("/").sockets.size - 1)
-    );
+    return LIKE_DELAY_CONSTANT * server.of("/").sockets.size;
 }

@@ -7,6 +7,7 @@ export const likeSchema = z.object({
     username: z.string(),
     message: z.object({
         entryId: z.number(),
+        value: z.number(),
     }),
 });
 
