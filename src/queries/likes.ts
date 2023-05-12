@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import { drizzleClient } from "../drizzle/db.ts";
-import { likes, queue } from "../drizzle/schemas/queue.ts";
+import { drizzleClient } from "../drizzle/db";
+import { likes, queue } from "../drizzle/schemas/queue";
 
 export async function updateLikes(songId: number) {
     const likesData = await drizzleClient

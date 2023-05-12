@@ -1,5 +1,5 @@
 import { type Socket } from "socket.io";
-import { decrypt } from "../utils/encryption.ts";
+import { decrypt } from "../utils/encryption";
 
 export function checkAuth<T>(
     message: { username: string; message: T },

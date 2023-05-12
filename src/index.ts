@@ -1,8 +1,8 @@
 import fs from "fs";
 import { createSecureServer } from "http2";
 import { Server } from "socket.io";
-import { env } from "./env.ts";
-import queueHandler from "./handlers/queue.ts";
+import { env } from "./env";
+import queueHandler from "./handlers/queue";
 
 const httpsServer = createSecureServer({
     cert: fs.readFileSync(env.CERT_PATH),

@@ -1,8 +1,8 @@
 import type { Server, Socket } from "socket.io";
-import { checkSchema, likeSchema } from "../middleware/messageSchemas.ts";
-import { checkAuth } from "../middleware/auth.ts";
-import { updateLikes } from "../queries/likes.ts";
-import { env } from "../env.ts";
+import { checkSchema, likeSchema } from "../middleware/messageSchemas";
+import { checkAuth } from "../middleware/auth";
+import { updateLikes } from "../queries/likes";
+import { env } from "../env";
 
 const showInfo = false;
 const textInfo = `Разбор новой композиции недоступен D:

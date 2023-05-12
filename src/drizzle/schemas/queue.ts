@@ -1,6 +1,6 @@
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { users } from "./auth.ts";
+import { users } from "./auth";
 
 export const queue = sqliteTable("queue", {
     id: integer("id").primaryKey(),

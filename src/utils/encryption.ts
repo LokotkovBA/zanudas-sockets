@@ -1,4 +1,4 @@
-import { env } from "../env.ts";
+import { env } from "../env";
 import CryptoJS from "crypto-js";
 
 const iv = CryptoJS.SHA256(env.SOCKET_SECRET);
