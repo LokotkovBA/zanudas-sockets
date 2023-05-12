@@ -48,13 +48,17 @@ export default function queueHandler(server: Server, socket: Socket) {
 
 function updateQueue(server: Server, toUpdate: Set<number>) {
     waitingToUpdate = true;
+    const likeDelay = getLikeDelay(server);
+    console.log("current like delay:", likeDelay);
+
     setTimeout(async () => {
         waitingToUpdate = false;
         for (const entryId of toUpdate) {
             await updateLikes(entryId);
+            toUpdate.delete(entryId);
         }
         server.emit("invalidate");
-    }, getLikeDelay(server));
+    }, likeDelay);
 }
 
 const LIKE_DELAY_CONSTANT = parseInt(env.LIKE_DELAY_CONSTANT);
