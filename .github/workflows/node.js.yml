@@ -30,4 +30,4 @@ jobs:
     - run: pnpm install
     - run: pnpm run build
     - run: pm2 delete zanudas-sockets
-    - run: pm2 start pnpm --name "zanudas-sockets" -- start
+    - run: pm2 start npm --name "zanudas-sockets" -- start
