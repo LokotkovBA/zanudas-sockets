@@ -14,7 +14,7 @@ export async function updateLikes(songId: number) {
         likeCount += value;
     }
 
-    return drizzleClient
+    await drizzleClient
         .update(queue)
         .set({ likeCount })
         .where(eq(queue.id, songId))

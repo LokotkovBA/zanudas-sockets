@@ -44,19 +44,50 @@ export default function queueHandler(server: Server, socket: Socket) {
             });
         }),
     );
+    socket.on("hook like", (message) =>
+        checkSchema(message, likeSchema, socket, (message) => {
+            checkAuth(message, socket, ({ username, message }) => {
+                server.to(username).emit("like", message);
+
+                toUpdate.add(message.entryId);
+                if (!waitingToUpdate) {
+                    hookUpdate(server, toUpdate);
+                }
+            });
+        }),
+    );
+}
+
+function hookUpdate(server: Server, toUpdate: Set<number>) {
+    waitingToUpdate = true;
+    const likeDelay = getLikeDelay(server);
+
+    setTimeout(async () => {
+        waitingToUpdate = false;
+        console.time("from edge");
+        await fetch(`${env.MAIN_URL}/api/likes/update`, {
+            method: "PUT",
+            body: JSON.stringify([...toUpdate.keys()]),
+        });
+        console.timeEnd("from edge");
+        server.emit("invalidate");
+    }, likeDelay);
 }
 
 function updateQueue(server: Server, toUpdate: Set<number>) {
     waitingToUpdate = true;
     const likeDelay = getLikeDelay(server);
-    console.log("current like delay:", likeDelay);
 
     setTimeout(async () => {
         waitingToUpdate = false;
+        console.time("from reg ru");
+        const dbPromises: Promise<void>[] = new Array(toUpdate.size);
         for (const entryId of toUpdate) {
-            await updateLikes(entryId);
+            dbPromises.push(updateLikes(entryId));
             toUpdate.delete(entryId);
         }
+        await Promise.all(dbPromises);
+        console.timeEnd("from reg ru");
         server.emit("invalidate");
     }, likeDelay);
 }
