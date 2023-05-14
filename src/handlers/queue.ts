@@ -49,19 +49,13 @@ export default function queueHandler(server: Server, socket: Socket) {
 
 function updateQueue(server: Server, toUpdate: Set<number>) {
     waitingToUpdate = true;
-    const likeDelay = getLikeDelay(server);
+    const likeDelay = parseInt(env.LIKE_DELAY_CONSTANT);
 
     setTimeout(async () => {
         waitingToUpdate = false;
-        await axios.put(`${env.MAIN_URL}/api/likes/update`, [
-            ...toUpdate.keys(),
-        ]);
+        const body = [...toUpdate.keys()];
         toUpdate.clear();
+        await axios.put(`${env.MAIN_URL}/api/likes/update`, body);
         server.emit("invalidate");
     }, likeDelay);
-}
-
-const LIKE_DELAY_CONSTANT = parseInt(env.LIKE_DELAY_CONSTANT);
-function getLikeDelay(server: Server): number {
-    return LIKE_DELAY_CONSTANT * server.of("/").sockets.size;
 }
