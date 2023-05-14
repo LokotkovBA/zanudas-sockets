@@ -1,9 +1,13 @@
 import type { Server, Socket } from "socket.io";
-import { checkSchema, likeSchema } from "../middleware/messageSchemas";
+import {
+    checkSchema,
+    invalidateSchema,
+    likeSchema,
+} from "../middleware/messageSchemas";
 import { checkAuth } from "../middleware/auth";
-import { updateLikes } from "../queries/likes";
 import { env } from "../env";
 import axios from "axios";
+import { isMod } from "../utils/privileges";
 
 const showInfo = false;
 const textInfo = `Разбор новой композиции недоступен D:
@@ -15,14 +19,6 @@ const toUpdate = new Set<number>();
 let waitingToUpdate = false;
 
 export default function queueHandler(server: Server, socket: Socket) {
-    socket.on("sub likes", (userName) => {
-        socket.join(userName);
-    });
-
-    socket.on("unsub likes", (userName) => {
-        socket.leave(userName);
-    });
-
     socket.on("sub admin", (userName) => {
         socket.join("admin");
         console.log(`${userName} subcribed to admin info updates!`);
@@ -35,15 +31,28 @@ export default function queueHandler(server: Server, socket: Socket) {
 
     socket.on("like", (message) =>
         checkSchema(message, likeSchema, socket, (message) => {
-            checkAuth(message, socket, ({ username, message }) => {
-                server.to(username).emit("like", message);
-
+            checkAuth(message, socket, ({ message }) => {
+                if (!message) {
+                    return socket.emit("error", "empty message");
+                }
                 toUpdate.add(message.entryId);
                 if (!waitingToUpdate) {
                     updateQueue(server, toUpdate);
                 }
             });
         }),
+    );
+
+    socket.on("invalidate", (message) =>
+        checkSchema(message, invalidateSchema, socket, (message) =>
+            checkAuth(message, socket, ({ privileges }) => {
+                if (!isMod(privileges)) {
+                    return socket.emit("error", "forbidden");
+                }
+
+                server.emit("invalidate");
+            }),
+        ),
     );
 }
 

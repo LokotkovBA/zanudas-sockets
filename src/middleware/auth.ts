@@ -2,12 +2,18 @@ import { type Socket } from "socket.io";
 import { decrypt } from "../utils/encryption";
 
 export function checkAuth<T>(
-    message: { username: string; message: T },
+    message: { username: string; privileges?: number; message?: T },
     socket: Socket,
-    next: (message: { username: string; message: T }) => void,
+    next: (message: {
+        username: string;
+        privileges?: number;
+        message?: T;
+    }) => void,
 ) {
     try {
-        const [username, timestamp] = decrypt(message.username).split("//");
+        const [username, timestamp, privileges] = decrypt(
+            message.username,
+        ).split("//");
         if (!username || !timestamp) {
             return socket.emit("error", "username");
         }
@@ -22,6 +28,10 @@ export function checkAuth<T>(
         }
 
         message.username = username;
+        if (privileges) {
+            message.privileges = parseInt(privileges);
+        }
+
         next(message);
     } catch (error) {
         console.error(error);

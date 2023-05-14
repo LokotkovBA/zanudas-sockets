@@ -1,7 +1,7 @@
 import type { Socket } from "socket.io";
 import { z } from "zod";
 
-type Schema = typeof likeSchema;
+type Schema = typeof likeSchema | typeof invalidateSchema;
 
 export const likeSchema = z.object({
     username: z.string(),
@@ -9,6 +9,10 @@ export const likeSchema = z.object({
         entryId: z.number(),
         value: z.number(),
     }),
+});
+
+export const invalidateSchema = z.object({
+    username: z.string(),
 });
 
 export function checkSchema<T extends Schema>(
