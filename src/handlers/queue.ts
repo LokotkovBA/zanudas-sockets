@@ -1,7 +1,7 @@
 import type { Server, Socket } from "socket.io";
 import {
     checkSchema,
-    invalidateSchema,
+    adminEventSchema,
     likeSchema,
 } from "../middleware/messageSchemas";
 import { checkAuth } from "../middleware/auth";
@@ -44,7 +44,7 @@ export default function queueHandler(server: Server, socket: Socket) {
     );
 
     socket.on("invalidate", (message) =>
-        checkSchema(message, invalidateSchema, socket, (message) =>
+        checkSchema(message, adminEventSchema, socket, (message) =>
             checkAuth(message, socket, ({ privileges }) => {
                 if (!isMod(privileges)) {
                     return socket.emit("error", "forbidden");
