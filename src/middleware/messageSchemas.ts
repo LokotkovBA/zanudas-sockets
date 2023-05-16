@@ -1,7 +1,11 @@
 import type { Socket } from "socket.io";
 import { z } from "zod";
 
-type Schema = typeof likeSchema | typeof adminEventSchema;
+export type Schema =
+    | typeof likeSchema
+    | typeof adminEventSchema
+    | typeof changeCurrentSchema
+    | typeof changeOverlaySchema;
 
 export const likeSchema = z.object({
     username: z.string(),
@@ -13,6 +17,21 @@ export const likeSchema = z.object({
 
 export const adminEventSchema = z.object({
     username: z.string(),
+    message: z.never(),
+});
+
+export const changeCurrentSchema = z.object({
+    username: z.string(),
+    message: z.object({
+        entryId: z.number(),
+    }),
+});
+
+export const changeOverlaySchema = z.object({
+    username: z.string(),
+    message: z.object({
+        value: z.string(),
+    }),
 });
 
 export function checkSchema<T extends Schema>(

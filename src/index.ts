@@ -72,5 +72,11 @@ socketServer.on("connect", (socket) => {
 let centrifugo: Centrifuge | null = null;
 
 setupCentrifuge()
-    .then((newCentrifugo) => (centrifugo = newCentrifugo))
-    .catch((error) => console.error(error));
+    .then((newCentrifugo) => {
+        centrifugo = newCentrifugo;
+        socketServer.emit("da-ready");
+    })
+    .catch((error) => {
+        socketServer.emit("error", "centrifuge error");
+        console.error(error);
+    });

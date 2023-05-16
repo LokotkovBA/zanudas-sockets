@@ -1,13 +1,14 @@
 import { type Socket } from "socket.io";
 import { decrypt } from "../utils/encryption";
+import { isMod } from "../utils/privileges";
 
 export function checkAuth<T>(
-    message: { username: string; privileges?: number; message?: T },
+    message: { username: string; privileges?: number; message: T },
     socket: Socket,
     next: (message: {
         username: string;
         privileges?: number;
-        message?: T;
+        message: T;
     }) => void,
 ) {
     try {
@@ -37,4 +38,20 @@ export function checkAuth<T>(
         console.error(error);
         socket.emit("error", "cipher error");
     }
+}
+
+export function checkMod<T>(
+    message: { username: string; privileges?: number; message: T },
+    socket: Socket,
+    next: (message: {
+        username: string;
+        privileges?: number;
+        message: T;
+    }) => void,
+) {
+    if (!isMod(message.privileges)) {
+        return socket.emit("error", "forbidden");
+    }
+
+    next(message);
 }

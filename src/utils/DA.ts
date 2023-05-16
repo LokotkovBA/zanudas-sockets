@@ -187,5 +187,6 @@ function configCentrifugo(
         console.log("DA disconected!");
     });
 
+    console.log("centrifuge started");
     return centrifuge;
 }
