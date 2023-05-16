@@ -3,7 +3,7 @@ import { createSecureServer } from "http2";
 import { Server } from "socket.io";
 import { env } from "./env";
 import queueHandler from "./handlers/queue";
-import { setupCentrifuge } from "./utils/DA";
+import { getCentrifugoStatus, setupCentrifuge } from "./utils/DA";
 import type Centrifuge from "centrifuge";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -34,6 +34,10 @@ httpsServer.listen(env.SOCKET_PORT ?? 3000, () =>
 socketServer.on("connect", (socket) => {
     queueHandler(socketServer, socket);
 
+    socket.on("centrifuge status", () => {
+        socket.emit(getCentrifugoStatus() ? "running" : "not running");
+    });
+
     socket.on("da-start", (message) =>
         checkSchema(message, adminEventSchema, socket, (message) =>
             checkAuth(message, socket, ({ privileges }) => {
@@ -46,7 +50,6 @@ socketServer.on("connect", (socket) => {
                 }
 
                 centrifugo.connect();
-                socket.emit("success", "centrifugo started");
             }),
         ),
     );
@@ -63,7 +66,6 @@ socketServer.on("connect", (socket) => {
                 }
 
                 centrifugo.disconnect();
-                socket.emit("success", "centrifugo stopped");
             }),
         ),
     );
@@ -71,12 +73,12 @@ socketServer.on("connect", (socket) => {
 
 let centrifugo: Centrifuge | null = null;
 
-setupCentrifuge()
+setupCentrifuge(socketServer)
     .then((newCentrifugo) => {
         centrifugo = newCentrifugo;
-        socketServer.emit("da-ready");
+        socketServer.to("admin").emit("da-ready");
     })
     .catch((error) => {
-        socketServer.emit("error", "centrifuge error");
+        socketServer.to("admin").emit("error", "centrifuge error");
         console.error(error);
     });

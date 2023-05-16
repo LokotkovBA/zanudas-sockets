@@ -9,6 +9,7 @@ import WebSocket from "ws";
 import { canParse, parseArtist, parseSong, parseSongName } from "./parsing";
 import { addQueueEntry } from "../queries/queue";
 import { decrypt, encrypt } from "./encryption";
+import { type Server } from "socket.io";
 
 async function getTokens() {
     const tokensData = await drizzleClient
@@ -133,7 +134,7 @@ async function addToken(
         .run();
 }
 
-export async function setupCentrifuge(): Promise<Centrifuge> {
+export async function setupCentrifuge(server: Server): Promise<Centrifuge> {
     const { accessToken, socketConnectionToken, userId } =
         await getSocketConnectionToken();
 
@@ -149,18 +150,29 @@ export async function setupCentrifuge(): Promise<Centrifuge> {
             },
         },
     );
-    return configCentrifugo(socketConnectionToken, centrifuge, userId);
+    return configCentrifugo(socketConnectionToken, centrifuge, userId, server);
+}
+
+let isCentrifugoRunning = false;
+export function getCentrifugoStatus(): boolean {
+    return isCentrifugoRunning;
 }
 
 function configCentrifugo(
     socketConnectionToken: string,
     centrifuge: Centrifuge,
     userId: number,
+    server: Server,
 ): Centrifuge {
     centrifuge.setToken(socketConnectionToken);
+
     centrifuge.on("connect", () => {
         console.log("Listening for donates from DA!");
-        centrifuge.subscribe(`$alerts:donation_${userId}`, (message) => {
+
+        server.to("admin").emit("success", "centrifugo started");
+        isCentrifugoRunning = true;
+
+        centrifuge.subscribe(`$alerts:donation_${userId}`, async (message) => {
             const text_message = message.data.message.replace(/^\n/, "");
             const entryData = {
                 donorName: message.data.username,
@@ -180,10 +192,14 @@ function configCentrifugo(
                 entryData.songName = parseSongName(song);
             }
 
-            addQueueEntry(entryData);
+            await addQueueEntry(entryData);
+            server.to("admin").emit("invalidate");
         });
     });
+
     centrifuge.on("disconnect", () => {
+        isCentrifugoRunning = false;
+        server.to("admin").emit("success", "centrifugo stopped");
         console.log("DA disconected!");
     });
 
