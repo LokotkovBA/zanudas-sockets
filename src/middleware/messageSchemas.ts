@@ -17,13 +17,12 @@ export const likeSchema = z.object({
 
 export const adminEventSchema = z.object({
     username: z.string(),
-    message: z.never(),
 });
 
 export const changeCurrentSchema = z.object({
     username: z.string(),
     message: z.object({
-        entryId: z.number(),
+        queueNumber: z.number(),
     }),
 });
 

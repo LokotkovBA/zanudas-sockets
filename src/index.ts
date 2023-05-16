@@ -35,10 +35,12 @@ socketServer.on("connect", (socket) => {
     queueHandler(socketServer, socket);
 
     socket.on("centrifuge status", () => {
-        socket.emit(getCentrifugoStatus() ? "running" : "not running");
+        socket.emit(
+            getCentrifugoStatus() ? "centrifuge started" : "centrifuge stopped",
+        );
     });
 
-    socket.on("da-start", (message) =>
+    socket.on("centrifuge start", (message) =>
         checkSchema(message, adminEventSchema, socket, (message) =>
             checkAuth(message, socket, ({ privileges }) => {
                 if (!isMod(privileges)) {
@@ -54,7 +56,7 @@ socketServer.on("connect", (socket) => {
         ),
     );
 
-    socket.on("da-stop", (message) =>
+    socket.on("centrifuge stop", (message) =>
         checkSchema(message, adminEventSchema, socket, (message) =>
             checkAuth(message, socket, ({ privileges }) => {
                 if (!isMod(privileges)) {
@@ -76,7 +78,7 @@ let centrifugo: Centrifuge | null = null;
 setupCentrifuge(socketServer)
     .then((newCentrifugo) => {
         centrifugo = newCentrifugo;
-        socketServer.to("admin").emit("da-ready");
+        socketServer.to("admin").emit("success", "centrifuge ready");
     })
     .catch((error) => {
         socketServer.to("admin").emit("error", "centrifuge error");

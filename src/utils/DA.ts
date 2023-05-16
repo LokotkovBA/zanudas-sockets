@@ -169,7 +169,7 @@ function configCentrifugo(
     centrifuge.on("connect", () => {
         console.log("Listening for donates from DA!");
 
-        server.to("admin").emit("success", "centrifugo started");
+        server.to("admin").emit("centrifuge started");
         isCentrifugoRunning = true;
 
         centrifuge.subscribe(`$alerts:donation_${userId}`, async (message) => {
@@ -199,7 +199,7 @@ function configCentrifugo(
 
     centrifuge.on("disconnect", () => {
         isCentrifugoRunning = false;
-        server.to("admin").emit("success", "centrifugo stopped");
+        server.to("admin").emit("centrifuge stopped");
         console.log("DA disconected!");
     });
 

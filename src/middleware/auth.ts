@@ -3,12 +3,12 @@ import { decrypt } from "../utils/encryption";
 import { isMod } from "../utils/privileges";
 
 export function checkAuth<T>(
-    message: { username: string; privileges?: number; message: T },
+    message: { username: string; privileges?: number; message?: T },
     socket: Socket,
     next: (message: {
         username: string;
         privileges?: number;
-        message: T;
+        message?: T;
     }) => void,
 ) {
     try {

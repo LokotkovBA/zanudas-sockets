@@ -3,47 +3,23 @@ import {
     checkSchema,
     adminEventSchema,
     likeSchema,
-    changeCurrentSchema,
     changeOverlaySchema,
 } from "../middleware/messageSchemas";
 import { checkAuth } from "../middleware/auth";
 import { env } from "../env";
 import axios from "axios";
 import { isMod } from "../utils/privileges";
-import { getCurrentQueueEntry } from "../queries/queue";
 
 let isOverlayTextVisible = false;
 let overlayText = `Разбор новой композиции недоступен D:
 Songlist - zanudas.ru`;
-let currentSong = -1;
 let overtlayFontSize = "2rem";
 let overlayEntryCount = 5;
-
-getCurrentQueueEntry()
-    .then((current) => (currentSong = current))
-    .catch((error) => console.log("error initialising current", error));
 
 const toUpdate = new Set<number>();
 let waitingToUpdate = false;
 
 export default function queueHandler(server: Server, socket: Socket) {
-    socket.on("change current", (message) =>
-        checkSchema(message, changeCurrentSchema, socket, (message) =>
-            checkAuth(
-                message,
-                socket,
-                ({ privileges, message: { entryId } }) => {
-                    if (!isMod(privileges)) {
-                        return socket.emit("error", "forbidden");
-                    }
-
-                    currentSong = entryId;
-                    server.to("admin").emit("current", currentSong);
-                },
-            ),
-        ),
-    );
-
     socket.on("change overlay text visibility", (message) => {
         checkSchema(message, adminEventSchema, socket, (message) =>
             checkAuth(message, socket, ({ privileges }) => {
@@ -55,9 +31,8 @@ export default function queueHandler(server: Server, socket: Socket) {
                 server
                     .to("admin")
                     .emit(
-                        isOverlayTextVisible
-                            ? "show overlay text"
-                            : "hide overlay text",
+                        "overlay text visibility",
+                        isOverlayTextVisible ? "show" : "hide",
                     );
             }),
         );
@@ -65,48 +40,68 @@ export default function queueHandler(server: Server, socket: Socket) {
 
     socket.on("change overlay text", (message) =>
         checkSchema(message, changeOverlaySchema, socket, (message) =>
-            checkAuth(message, socket, ({ privileges, message: { value } }) => {
+            checkAuth(message, socket, ({ privileges, message }) => {
                 if (!isMod(privileges)) {
                     return socket.emit("error", "forbidden");
                 }
+                if (!message) {
+                    throw new Error(
+                        "Unexpected error. Message lost after checkAuth",
+                    );
+                }
 
-                overlayText = value;
-                server.to("admin").emit("overlay text changed", value);
+                overlayText = message.value;
+                server.to("admin").emit("overlay text", message.value);
             }),
         ),
     );
 
     socket.on("change overlay font size", (message) =>
         checkSchema(message, changeOverlaySchema, socket, (message) =>
-            checkAuth(message, socket, ({ privileges, message: { value } }) => {
+            checkAuth(message, socket, ({ privileges, message }) => {
                 if (!isMod(privileges)) {
                     return socket.emit("error", "forbidden");
                 }
+                if (!message) {
+                    throw new Error(
+                        "Unexpected error. Message lost after checkAuth",
+                    );
+                }
 
-                overtlayFontSize = value;
-                server.to("admin").emit("overlay font size changed", value);
+                overtlayFontSize = message.value;
+                server.to("admin").emit("overlay font size", message.value);
             }),
         ),
     );
 
     socket.on("change overlay entry count", (message) =>
         checkSchema(message, changeOverlaySchema, socket, (message) =>
-            checkAuth(message, socket, ({ privileges, message: { value } }) => {
+            checkAuth(message, socket, ({ privileges, message }) => {
                 if (!isMod(privileges)) {
                     return socket.emit("error", "forbidden");
                 }
+                if (!message) {
+                    throw new Error(
+                        "Unexpected error. Message lost after checkAuth",
+                    );
+                }
 
-                overlayEntryCount = parseInt(value);
-                server.to("admin").emit("overlay entry count changed", value);
+                overlayEntryCount = parseInt(message.value);
+                server
+                    .to("admin")
+                    .emit("overlay entry count changed", message.value);
             }),
         ),
     );
 
-    socket.on("get current", () => {
-        socket.emit("current", currentSong);
-    });
     socket.on("get overlay text", () => {
-        socket.emit("overtlay text", overlayText);
+        socket.emit("overlay text", overlayText);
+    });
+    socket.on("get overlay text visibility", () => {
+        socket.emit(
+            "overlay text visibility",
+            isOverlayTextVisible ? "show" : "hide",
+        );
     });
     socket.on("get overlay font size", () => {
         socket.emit("overlay font size", overtlayFontSize);
@@ -127,8 +122,14 @@ export default function queueHandler(server: Server, socket: Socket) {
 
     socket.on("like", (message) =>
         checkSchema(message, likeSchema, socket, (message) => {
-            checkAuth(message, socket, ({ message: { entryId } }) => {
-                toUpdate.add(entryId);
+            checkAuth(message, socket, ({ message }) => {
+                if (!message) {
+                    throw new Error(
+                        "Unexpected error. Message lost after checkAuth",
+                    );
+                }
+
+                toUpdate.add(message.entryId);
 
                 if (!waitingToUpdate) {
                     updateQueue(server, toUpdate);
