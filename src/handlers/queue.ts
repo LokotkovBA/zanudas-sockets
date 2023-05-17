@@ -107,7 +107,7 @@ export default function queueHandler(server: Server, socket: Socket) {
         socket.emit("overlay font size", overtlayFontSize);
     });
     socket.on("get overlay entry count", () => {
-        socket.emit("overtlay entry count", overlayEntryCount);
+        socket.emit("overlay entry count", overlayEntryCount);
     });
 
     socket.on("sub admin", (userName) => {
