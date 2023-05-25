@@ -4,6 +4,7 @@ import {
     adminEventSchema,
     likeSchema,
     changeOverlaySchema,
+    changeCurrentSchema,
 } from "../middleware/messageSchemas";
 import { checkAuth } from "../middleware/auth";
 import { env } from "../env";
@@ -13,11 +14,10 @@ import { isMod } from "../utils/privileges";
 let isOverlayTextVisible = false;
 let overlayText = `Разбор новой композиции недоступен D:
 Songlist - zanudas.ru`;
-let overtlayFontSize = "2rem";
-let overlayEntryCount = 5;
 
 const toUpdate = new Set<number>();
 let waitingToUpdate = false;
+let current = 0;
 
 export default function queueHandler(server: Server, socket: Socket) {
     socket.on("change overlay text visibility", (message) => {
@@ -56,8 +56,8 @@ export default function queueHandler(server: Server, socket: Socket) {
         ),
     );
 
-    socket.on("change overlay font size", (message) =>
-        checkSchema(message, changeOverlaySchema, socket, (message) =>
+    socket.on("change current", (message) =>
+        checkSchema(message, changeCurrentSchema, socket, (message) =>
             checkAuth(message, socket, ({ privileges, message }) => {
                 if (!isMod(privileges)) {
                     return socket.emit("error", "forbidden");
@@ -68,28 +68,8 @@ export default function queueHandler(server: Server, socket: Socket) {
                     );
                 }
 
-                overtlayFontSize = message.value;
-                server.to("admin").emit("overlay font size", message.value);
-            }),
-        ),
-    );
-
-    socket.on("change overlay entry count", (message) =>
-        checkSchema(message, changeOverlaySchema, socket, (message) =>
-            checkAuth(message, socket, ({ privileges, message }) => {
-                if (!isMod(privileges)) {
-                    return socket.emit("error", "forbidden");
-                }
-                if (!message) {
-                    throw new Error(
-                        "Unexpected error. Message lost after checkAuth",
-                    );
-                }
-
-                overlayEntryCount = parseInt(message.value);
-                server
-                    .to("admin")
-                    .emit("overlay entry count changed", message.value);
+                current = message.queueNumber;
+                server.to("admin").emit("current", message.queueNumber);
             }),
         ),
     );
@@ -103,11 +83,8 @@ export default function queueHandler(server: Server, socket: Socket) {
             isOverlayTextVisible ? "show" : "hide",
         );
     });
-    socket.on("get overlay font size", () => {
-        socket.emit("overlay font size", overtlayFontSize);
-    });
-    socket.on("get overlay entry count", () => {
-        socket.emit("overlay entry count", overlayEntryCount.toString());
+    socket.on("get current", () => {
+        socket.emit("current", current);
     });
 
     socket.on("sub admin", (userName) => {
