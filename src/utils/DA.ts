@@ -24,6 +24,11 @@ async function getTokens() {
         .orderBy(desc(tokens.id))
         .limit(1)
         .get();
+
+    if (!tokensData) {
+        throw new Error("no DA token in DB!");
+    }
+
     tokensData.accessToken = decrypt(tokensData.accessToken);
     tokensData.refreshToken = decrypt(tokensData.refreshToken);
     tokensData.socketConnectionToken = decrypt(
