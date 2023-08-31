@@ -69,7 +69,7 @@ export default function queueHandler(server: Server, socket: Socket) {
                 }
 
                 current = message.queueNumber;
-                server.to("admin").emit("current", message.queueNumber);
+                server.emit("current", message.queueNumber);
             }),
         ),
     );
