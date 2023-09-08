@@ -28,12 +28,10 @@ export default function queueHandler(server: Server, socket: Socket) {
                 }
 
                 isOverlayTextVisible = !isOverlayTextVisible;
-                server
-                    .to("admin")
-                    .emit(
-                        "overlay text visibility",
-                        isOverlayTextVisible ? "show" : "hide",
-                    );
+                server.emit(
+                    "overlay text visibility",
+                    isOverlayTextVisible ? "show" : "hide",
+                );
             }),
         );
     });
@@ -51,7 +49,7 @@ export default function queueHandler(server: Server, socket: Socket) {
                 }
 
                 overlayText = message.value;
-                server.to("admin").emit("overlay text", message.value);
+                server.emit("overlay text", message.value);
             }),
         ),
     );
