@@ -11,7 +11,7 @@ import { env } from "../env";
 import axios from "axios";
 import { isMod } from "../utils/privileges";
 
-let isOverlayTextVisible = false;
+let isOverlayTextVisible = true;
 let overlayText = `Разбор новой композиции недоступен D:
 Songlist - zanudas.ru`;
 
